@@ -2,6 +2,8 @@ export declare class BaseNode {
     static _id: number;
     id: number;
     line: number;
+    start: number;
+    length: number;
     constructor();
     get isAstNode(): boolean;
     get astNodeType(): string;

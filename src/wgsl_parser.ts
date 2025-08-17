@@ -105,8 +105,16 @@ export class WgslParser {
     this._current = 0;
   }
 
-  _updateNode<T extends AST.Node>(n: T, l?: number): T {
+  _updateNode<T extends AST.Node>(n: T, l?: number, token?: Token): T {
     n.line = l ?? this._currentLine;
+    
+    // Capture position information from the provided token or the most recent token
+    const sourceToken = token || (this._current > 0 ? this._previous() : null);
+    if (sourceToken) {
+      n.start = sourceToken.start;
+      n.length = sourceToken.end - sourceToken.start;
+    }
+    
     return n;
   }
 
@@ -1382,18 +1390,21 @@ export class WgslParser {
 
     // const_literal
     if (this._match(TokenTypes.tokens.int_literal)) {
-      const s = this._previous().toString();
+      const token = this._previous();
+      const s = token.toString();
       let type = s.endsWith("i") || s.endsWith("i") ? AST.Type.i32 :
           s.endsWith("u") || s.endsWith("U") ? AST.Type.u32 : AST.Type.x32;
       const i = parseInt(s);
       this._validateTypeRange(i, type);
-      return this._updateNode(new AST.LiteralExpr(new ScalarData(i, this._exec.getTypeInfo(type)), type));
+      return this._updateNode(new AST.LiteralExpr(new ScalarData(i, this._exec.getTypeInfo(type)), type), undefined, token);
     } else if (this._match(TokenTypes.tokens.uint_literal)) {
-      const u = parseInt(this._previous().toString());
+      const token = this._previous();
+      const u = parseInt(token.toString());
       this._validateTypeRange(u, AST.Type.u32);
-      return this._updateNode(new AST.LiteralExpr(new ScalarData(u, this._exec.getTypeInfo(AST.Type.u32)), AST.Type.u32));
+      return this._updateNode(new AST.LiteralExpr(new ScalarData(u, this._exec.getTypeInfo(AST.Type.u32)), AST.Type.u32), undefined, token);
     } else if (this._match([TokenTypes.tokens.decimal_float_literal, TokenTypes.tokens.hex_float_literal])) {
-      let fs = this._previous().toString();
+      const token = this._previous();
+      let fs = token.toString();
       let isF16 = fs.endsWith("h");
       if (isF16) {
         fs = fs.substring(0, fs.length - 1);
@@ -1401,10 +1412,11 @@ export class WgslParser {
       const f = parseFloat(fs);
       this._validateTypeRange(f, isF16 ? AST.Type.f16 : AST.Type.f32);
       const type = isF16 ? AST.Type.f16 : AST.Type.f32;
-      return this._updateNode(new AST.LiteralExpr(new ScalarData(f, this._exec.getTypeInfo(type)), type));
+      return this._updateNode(new AST.LiteralExpr(new ScalarData(f, this._exec.getTypeInfo(type)), type), undefined, token);
     } else if (this._match([TokenTypes.keywords.true, TokenTypes.keywords.false])) {
-      let b = this._previous().toString() === TokenTypes.keywords.true.rule;
-      return this._updateNode(new AST.LiteralExpr(new ScalarData(b ? 1 : 0, this._exec.getTypeInfo(AST.Type.bool)), AST.Type.bool));
+      const token = this._previous();
+      let b = token.toString() === TokenTypes.keywords.true.rule;
+      return this._updateNode(new AST.LiteralExpr(new ScalarData(b ? 1 : 0, this._exec.getTypeInfo(AST.Type.bool)), AST.Type.bool), undefined, token);
     }
 
     // paren_expression

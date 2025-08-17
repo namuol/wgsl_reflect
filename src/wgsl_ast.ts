@@ -15,10 +15,14 @@ export class Node {
 
   id: number;
   line: number;
+  start: number;
+  length: number;
 
   constructor() {
     this.id = Node._id++;
     this.line = 0;
+    this.start = -1;
+    this.length = 0;
   }
 
   get isAstNode(): boolean {

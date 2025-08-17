@@ -11,6 +11,8 @@ export declare class Node {
     static _id: number;
     id: number;
     line: number;
+    start: number;
+    length: number;
     constructor();
     get isAstNode(): boolean;
     get astNodeType(): string;
